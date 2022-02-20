@@ -39,6 +39,7 @@ namespace GetOffWorkCountdown
         private int onMinute;
         private Image[] images;
         private ConfigForm configForm;
+        public MainForm mainForm;
         public GetOffWorkContext()
         {
             off = null;
@@ -62,7 +63,7 @@ namespace GetOffWorkCountdown
             timer.Start();
 
             ContextMenuStrip contextMenuStrip = new ContextMenuStrip();
-            countdown = new ToolStripMenuItem("", null);
+            countdown = new ToolStripMenuItem("", null, new EventHandler(OnMain));
             contextMenuStrip.Items.AddRange(new ToolStripItem[]
             {
                 countdown,
@@ -77,6 +78,22 @@ namespace GetOffWorkCountdown
                 Visible = true
             };
         }
+        private void OnMain(object sender, EventArgs e)
+        {
+            if (mainForm == null)
+            {
+                mainForm = new MainForm();
+                mainForm.FormClosed += MainForm_FormClosed;
+            }
+            mainForm.TopMost = true;
+            mainForm.Show();
+        }
+
+        private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            mainForm = null;
+        }
+
         private void OnConfig(object sender, EventArgs e)
         {
             configForm = new ConfigForm();
@@ -89,17 +106,18 @@ namespace GetOffWorkCountdown
         private void Countdown(object sender, EventArgs e)
         {
             DateTime now = DateTime.Now;
-            if (on == null || on.Day < now.Day)
+            if (on.Day < now.Day)
             {
                 on = new DateTime(now.Year, now.Month, now.Day, onHour, onMinute, 00);
             }
             if (off == null)
             {
                 off = new DateTime(now.Year, now.Month, now.Day, offHour, offMinute, 00);
-                if (off?.Ticks < now.Ticks)
-                {
-                    off = off?.AddDays(1);
-                }
+            }
+            if (off?.Ticks < now.Ticks)
+            {
+                off = off?.AddDays(1);
+                on = on.AddDays(1);
             }
             long duration = (long)(off?.Ticks - on.Ticks);
 
@@ -113,9 +131,21 @@ namespace GetOffWorkCountdown
             {
                 countdown.Image = images[indexOfIcon];
             }
-
-            notifyIcon.Text = LeftString(left);
-            countdown.Text = notifyIcon.Text;
+            string countdownText;
+            if (now < on)
+            {
+                countdownText = "Enjoy your life";
+            } 
+            else
+            {
+                countdownText = LeftString(left);
+            }
+            notifyIcon.Text = countdownText;
+            countdown.Text = countdownText;
+            if (mainForm != null)
+            {
+                mainForm.UpdateText(countdownText);
+            }
             left -= OneSecond;
         }
         private string LeftString(long left)
