@@ -23,13 +23,20 @@ namespace GetOffWorkCountdown
     class GetOffWorkContext : ApplicationContext
     {
         private NotifyIcon notifyIcon;
-
+        private Timer timer;
+        private DateTime off;
+        private long left = -1;
         public GetOffWorkContext()
         {
+            timer = new Timer();
+            timer.Interval = 1000;
+            timer.Tick += new EventHandler(Countdown);
+            timer.Start();
+
             ContextMenuStrip contextMenuStrip = new ContextMenuStrip();
             contextMenuStrip.Items.AddRange(new ToolStripItem[]
             {
-                new ToolStripMenuItem("Exit", null, (object sender, EventArgs e) => Application.Exit())
+                new ToolStripMenuItem("Exit", null,  OnExit)
             });
             notifyIcon = new NotifyIcon()
             {
@@ -38,6 +45,36 @@ namespace GetOffWorkCountdown
                 ContextMenuStrip = contextMenuStrip,
                 Visible = true
             };
+        }
+        private void OnExit(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+        private void Countdown(object sender, EventArgs e)
+        {
+            DateTime now = DateTime.Now;
+            if (off == null || off < now)
+            {
+                off = new DateTime(now.Year, now.Month, now.Day, 19, 00, 00);
+            }
+            if (left < 0)
+            {
+                left = off.Ticks - now.Ticks;
+            }
+
+            notifyIcon.Text = LeftString(left / 10000);
+            left -= 10000000;
+        }
+        private string LeftString(long left)
+        {
+            long leftHour = left / 3600000;
+            long leftMinute = (left % 3600000) / 60000;
+            long leftSecond = ((left % 3600000) % 60000) / 1000;
+            return formatNum(leftHour) + ":" + formatNum(leftMinute) + ":" + formatNum(leftSecond);
+        }
+        private string formatNum(long n)
+        {
+            return n < 10 ? "0" + n : "" + n;
         }
     }
 }
