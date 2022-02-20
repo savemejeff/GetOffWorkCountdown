@@ -1,6 +1,7 @@
 ﻿using GetOffWorkCountdown.Properties;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -35,8 +36,17 @@ namespace GetOffWorkCountdown
         private int offMinute;
         private int onHour;
         private int onMinute;
+        private Image[] images;
         public GetOffWorkContext()
         {
+            images = new Image[]
+            {
+                Resources._25,
+                Resources._50,
+                Resources._75,
+                Resources._100
+            };
+
             var settings = new Settings();
             offHour = settings.OffHour;
             offMinute = settings.OffMinute;
@@ -78,9 +88,17 @@ namespace GetOffWorkCountdown
             {
                 off = new DateTime(now.Year, now.Month, now.Day, offHour, offMinute, 00);
             }
+            long duration = off.Ticks - on.Ticks;
+
             if (left < 0)
             {
                 left = off.Ticks - now.Ticks;
+            }
+
+            int indexOfIcon = (int)(left / (duration / 4));
+            if (indexOfIcon >= 0 && indexOfIcon < 4)
+            {
+                countdown.Image = images[indexOfIcon];
             }
 
             notifyIcon.Text = LeftString(left);
