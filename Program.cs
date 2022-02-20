@@ -26,12 +26,23 @@ namespace GetOffWorkCountdown
         private ToolStripItem countdown;
         private Timer timer;
         private DateTime off;
+        private DateTime on;
         private long left = -1;
         private static readonly long OneSecond = 10000000;
         private static readonly long OneMinute = OneSecond * 60;
         private static readonly long OneHour = OneMinute * 60;
+        private int offHour;
+        private int offMinute;
+        private int onHour;
+        private int onMinute;
         public GetOffWorkContext()
         {
+            var settings = new Settings();
+            offHour = settings.OffHour;
+            offMinute = settings.OffMinute;
+            onHour = settings.OnHour;
+            onMinute = settings.OnMinute;
+
             timer = new Timer();
             timer.Interval = 1000;
             timer.Tick += new EventHandler(Countdown);
@@ -59,9 +70,13 @@ namespace GetOffWorkCountdown
         private void Countdown(object sender, EventArgs e)
         {
             DateTime now = DateTime.Now;
+            if (on == null || on.Date < now.Date)
+            {
+                on = new DateTime(now.Year, now.Month, now.Day, onHour, onMinute, 00);
+            }
             if (off == null || off < now)
             {
-                off = new DateTime(now.Year, now.Month, now.Day, 19, 00, 00);
+                off = new DateTime(now.Year, now.Month, now.Day, offHour, offMinute, 00);
             }
             if (left < 0)
             {
