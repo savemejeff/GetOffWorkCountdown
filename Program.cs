@@ -1,4 +1,5 @@
-﻿using GetOffWorkCountdown.Properties;
+﻿using GetOffWorkCountdown.Forms;
+using GetOffWorkCountdown.Properties;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -26,7 +27,7 @@ namespace GetOffWorkCountdown
         private NotifyIcon notifyIcon;
         private ToolStripItem countdown;
         private Timer timer;
-        private DateTime off;
+        private DateTime? off;
         private DateTime on;
         private long left = -1;
         private static readonly long OneSecond = 10000000;
@@ -37,8 +38,11 @@ namespace GetOffWorkCountdown
         private int onHour;
         private int onMinute;
         private Image[] images;
+        private ConfigForm configForm;
         public GetOffWorkContext()
         {
+            off = null;
+
             images = new Image[]
             {
                 Resources._25,
@@ -47,11 +51,10 @@ namespace GetOffWorkCountdown
                 Resources._100
             };
 
-            var settings = new Settings();
-            offHour = settings.OffHour;
-            offMinute = settings.OffMinute;
-            onHour = settings.OnHour;
-            onMinute = settings.OnMinute;
+            offHour = Settings.Default.OffHour;
+            offMinute = Settings.Default.OffMinute;
+            onHour = Settings.Default.OnHour;
+            onMinute = Settings.Default.OnMinute;
 
             timer = new Timer();
             timer.Interval = 1000;
@@ -63,7 +66,8 @@ namespace GetOffWorkCountdown
             contextMenuStrip.Items.AddRange(new ToolStripItem[]
             {
                 countdown,
-                new ToolStripMenuItem("Exit", null,  OnExit)
+                new ToolStripMenuItem("Config", null, new EventHandler(OnConfig)),
+                new ToolStripMenuItem("Exit", null,  new EventHandler(OnExit))
             });
             notifyIcon = new NotifyIcon()
             {
@@ -73,6 +77,11 @@ namespace GetOffWorkCountdown
                 Visible = true
             };
         }
+        private void OnConfig(object sender, EventArgs e)
+        {
+            configForm = new ConfigForm();
+            configForm.Show();
+        }
         private void OnExit(object sender, EventArgs e)
         {
             Application.Exit();
@@ -80,19 +89,23 @@ namespace GetOffWorkCountdown
         private void Countdown(object sender, EventArgs e)
         {
             DateTime now = DateTime.Now;
-            if (on == null || on.Date < now.Date)
+            if (on == null || on.Day < now.Day)
             {
                 on = new DateTime(now.Year, now.Month, now.Day, onHour, onMinute, 00);
             }
-            if (off == null || off < now)
+            if (off == null)
             {
                 off = new DateTime(now.Year, now.Month, now.Day, offHour, offMinute, 00);
+                if (off?.Ticks < now.Ticks)
+                {
+                    off = off?.AddDays(1);
+                }
             }
-            long duration = off.Ticks - on.Ticks;
+            long duration = (long)(off?.Ticks - on.Ticks);
 
             if (left < 0)
             {
-                left = off.Ticks - now.Ticks;
+                left = (long)(off?.Ticks - now.Ticks);
             }
 
             int indexOfIcon = (int)(left / (duration / 4));
