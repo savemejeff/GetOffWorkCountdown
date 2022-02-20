@@ -23,9 +23,13 @@ namespace GetOffWorkCountdown
     class GetOffWorkContext : ApplicationContext
     {
         private NotifyIcon notifyIcon;
+        private ToolStripItem countdown;
         private Timer timer;
         private DateTime off;
         private long left = -1;
+        private static readonly long OneSecond = 10000000;
+        private static readonly long OneMinute = OneSecond * 60;
+        private static readonly long OneHour = OneMinute * 60;
         public GetOffWorkContext()
         {
             timer = new Timer();
@@ -34,8 +38,10 @@ namespace GetOffWorkCountdown
             timer.Start();
 
             ContextMenuStrip contextMenuStrip = new ContextMenuStrip();
+            countdown = new ToolStripMenuItem("", null);
             contextMenuStrip.Items.AddRange(new ToolStripItem[]
             {
+                countdown,
                 new ToolStripMenuItem("Exit", null,  OnExit)
             });
             notifyIcon = new NotifyIcon()
@@ -62,17 +68,18 @@ namespace GetOffWorkCountdown
                 left = off.Ticks - now.Ticks;
             }
 
-            notifyIcon.Text = LeftString(left / 10000);
-            left -= 10000000;
+            notifyIcon.Text = LeftString(left);
+            countdown.Text = notifyIcon.Text;
+            left -= OneSecond;
         }
         private string LeftString(long left)
         {
-            long leftHour = left / 3600000;
-            long leftMinute = (left % 3600000) / 60000;
-            long leftSecond = ((left % 3600000) % 60000) / 1000;
-            return formatNum(leftHour) + ":" + formatNum(leftMinute) + ":" + formatNum(leftSecond);
+            long leftHour = left / OneHour;
+            long leftMinute = (left % OneHour) / OneMinute;
+            long leftSecond = ((left % OneHour) % OneMinute) / OneSecond;
+            return FormatNum(leftHour) + ":" + FormatNum(leftMinute) + ":" + FormatNum(leftSecond);
         }
-        private string formatNum(long n)
+        private string FormatNum(long n)
         {
             return n < 10 ? "0" + n : "" + n;
         }
