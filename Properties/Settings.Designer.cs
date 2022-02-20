@@ -25,7 +25,7 @@ namespace GetOffWorkCountdown.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("19")]
+        [global::System.Configuration.DefaultSettingValueAttribute("17")]
         public int OffHour {
             get {
                 return ((int)(this["OffHour"]));
