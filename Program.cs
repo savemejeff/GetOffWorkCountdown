@@ -27,23 +27,16 @@ namespace GetOffWorkCountdown
         private NotifyIcon notifyIcon;
         private ToolStripItem countdown;
         private Timer timer;
-        private DateTime? off;
-        private DateTime on;
-        private long left = -1;
+        private DateTime offTime;
+        private DateTime onTime;
         private static readonly long OneSecond = 10000000;
         private static readonly long OneMinute = OneSecond * 60;
         private static readonly long OneHour = OneMinute * 60;
-        private int offHour;
-        private int offMinute;
-        private int onHour;
-        private int onMinute;
         private Image[] images;
         private ConfigForm configForm;
         public MainForm mainForm;
         public GetOffWorkContext()
         {
-            off = null;
-
             images = new Image[]
             {
                 Resources._25,
@@ -52,10 +45,17 @@ namespace GetOffWorkCountdown
                 Resources._100
             };
 
-            offHour = Settings.Default.OffHour;
-            offMinute = Settings.Default.OffMinute;
-            onHour = Settings.Default.OnHour;
-            onMinute = Settings.Default.OnMinute;
+            var offHour = Settings.Default.OffHour;
+            var offMinute = Settings.Default.OffMinute;
+            var onHour = Settings.Default.OnHour;
+            var onMinute = Settings.Default.OnMinute;
+            onTime = DateTime.Now;
+            onTime = new DateTime(onTime.Year, onTime.Month, onTime.Day, onHour, onMinute, 0, 0);
+            offTime = new DateTime(onTime.Year, onTime.Month, onTime.Day, offHour, offMinute, 0, 0);
+            if (offTime < onTime)
+            {
+                offTime = offTime.AddDays(1);
+            }
 
             timer = new Timer();
             timer.Interval = 1000;
@@ -106,25 +106,13 @@ namespace GetOffWorkCountdown
         private void Countdown(object sender, EventArgs e)
         {
             DateTime now = DateTime.Now;
-            if (on.Day < now.Day)
+            if (now >= offTime)
             {
-                on = new DateTime(now.Year, now.Month, now.Day, onHour, onMinute, 00);
+                offTime = offTime.AddDays(1);
+                onTime = onTime.AddDays(1);
             }
-            if (off == null)
-            {
-                off = new DateTime(now.Year, now.Month, now.Day, offHour, offMinute, 00);
-            }
-            if (off?.Ticks < now.Ticks)
-            {
-                off = off?.AddDays(1);
-                on = on.AddDays(1);
-            }
-            long duration = (long)(off?.Ticks - on.Ticks);
-
-            if (left < 0)
-            {
-                left = (long)(off?.Ticks - now.Ticks);
-            }
+            long duration = (long)(offTime.Ticks - onTime.Ticks);
+            long left = (long)(offTime.Ticks - now.Ticks);
 
             int indexOfIcon = (int)(left / (duration / 4));
             if (indexOfIcon >= 0 && indexOfIcon < 4)
@@ -132,7 +120,7 @@ namespace GetOffWorkCountdown
                 countdown.Image = images[indexOfIcon];
             }
             string countdownText;
-            if (now < on)
+            if (now < onTime)
             {
                 countdownText = "Enjoy your life";
             } 
@@ -146,7 +134,6 @@ namespace GetOffWorkCountdown
             {
                 mainForm.UpdateText(countdownText);
             }
-            left -= OneSecond;
         }
         private string LeftString(long left)
         {
